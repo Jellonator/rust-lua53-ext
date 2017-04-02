@@ -1,0 +1,7 @@
+[package]
+name = "lua53-ext"
+version = "0.1.0"
+authors = ["Jellonator <jellonator00@gmail.com>"]
+
+[dependencies]
+lua = "*"
