@@ -1,4 +1,4 @@
-use lua::{Index, FromLua, State};
+use lua::{Index, ToLua, FromLua, State};
 use types::{LuaStackable};
 
 pub struct LuaNil {
@@ -16,6 +16,12 @@ impl LuaNil {
 impl LuaStackable for LuaNil {
     fn get_pos(&self) -> Index {
         self.index
+    }
+}
+
+impl ToLua for LuaNil {
+    fn to_lua(&self, state: &mut State) {
+        state.push_value(self.get_pos());
     }
 }
 

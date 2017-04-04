@@ -1,6 +1,7 @@
 use lua::{State, Index, ToLua, FromLua, Function, REGISTRYINDEX};
 use types;
 use std::ptr;
+use error;
 
 pub struct Context<'a> {
     state: &'a mut State,
@@ -69,6 +70,12 @@ impl<'a> Context<'a> {
         types::LuaUserdata::new(i)
     }
 
+    pub fn create_lib(&mut self, lib: &[(&str, Function)]) -> types::LuaTable {
+        self.state.new_lib(lib);
+        let i = self.state.get_top();
+        types::LuaTable::new(i)
+    }
+
     // Global
     pub fn push_global(&mut self, key: &str) -> types::LuaGeneric {
         self.state.get_global(key);
@@ -97,22 +104,41 @@ impl<'a> Context<'a> {
         types::LuaGeneric::new(i)
     }
 
+    pub fn get_from_registry_typed<T: FromLua>(&mut self, key: &ToLua) -> Option<T> {
+        key.to_lua(self.state);
+        self.state.get_table(REGISTRYINDEX);
+        let i = self.state.get_top();
+        T::from_lua(&mut self.state, i)
+    }
+
     pub fn set_in_registry(&mut self, key: &ToLua, value: &ToLua) {
         key.to_lua(self.state);
         value.to_lua(self.state);
         self.state.set_table(REGISTRYINDEX);
     }
 
+    // Arguments
+    pub fn get_arg<T: FromLua>(&mut self, arg: Index) -> Option<T> {
+        T::from_lua(&mut self.state, arg)
+    }
+
+    pub fn get_arg_or<T: FromLua>(&mut self, arg: Index, value: T) -> Option<T> {
+        if self.state.is_none_or_nil(arg) {
+            Some(value)
+        } else {
+            T::from_lua(&mut self.state, arg)
+        }
+    }
+
     // Execution
-    pub fn do_string(&mut self, s: &str) -> Result<(), String> {
-        let result = self.state.do_string(&s);
-        match result.is_err() {
-            false => Ok(()),
-            true => {
-                let error_idx = self.state.get_top();
-                let ret = self.state.opt_string(error_idx, "Unknown Lua Error.").into();
-                self.state.pop(1);
-                Err(ret)
+    pub fn do_string(&mut self, s: &str) -> error::Result<()> {
+        let threadstatus = self.state.do_string(&s);
+        match error::get_status_from_threadstatus(threadstatus) {
+            Ok(status) => {
+                error::new_luaresult_ok(status, ())
+            },
+            Err(status) => {
+                error::new_luaresult_err(status, error::pop_error_from_state(&mut self.state))
             }
         }
     }
@@ -120,6 +146,41 @@ impl<'a> Context<'a> {
     // Extra
     pub fn push_context(&mut self) -> Context {
         Context::new(&mut self.state)
+    }
+
+    pub fn return_context(mut self, args: &[&ToLua]) -> Index {
+        // push elements in reverse order
+        for arg in args.iter().rev() {
+            arg.to_lua(&mut self.state);
+        }
+        for i in 0..args.len() {
+            self.state.replace(i as Index + self.target_pos);
+        }
+        self.target_pos += args.len() as Index;
+        args.len() as Index
+    }
+
+    // metatable
+    pub fn metatable_register(&mut self, name: &str) -> (bool, types::LuaTable) {
+        let ret = self.state.new_metatable(name);
+        let i = self.state.get_top();
+        let table = types::LuaTable::new(i);
+        (ret, table)
+    }
+
+    pub fn metatable_get(&mut self, name: &str) -> Option<types::LuaTable> {
+        self.state.get_metatable_from_registry(name);
+        match self.state.is_table(-1) {
+            true => {
+                let i = self.state.get_top();
+                let table = types::LuaTable::new(i);
+                Some(table)
+            },
+            false => {
+                self.state.pop(1);
+                None
+            }
+        }
     }
 }
 

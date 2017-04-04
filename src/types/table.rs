@@ -1,4 +1,4 @@
-use lua::{Index, ToLua, FromLua, State};
+use lua::{Index, ToLua, FromLua, State, Type};
 use types::{LuaStackable, LuaGeneric};
 use context::Context;
 
@@ -35,14 +35,47 @@ impl LuaTable {
         context.get_state().get_table(self.get_pos());
         let top = context.get_state().get_top();
         let ret = context.get_state().to_type(top);
-        context.get_state().pop(1);
         ret
+    }
+
+    pub fn iter_array<F>(&self, context: &mut Context, mut func: F)
+            where F: FnMut(Context, i64, LuaGeneric) {
+        let mut key = 1;
+        loop {
+            let mut new_context = context.push_context();
+            let value = self.get(&mut new_context, &key);
+            let t = value.type_of(&mut new_context);
+            key += 1;
+            match t {
+                Type::Nil => break,
+                _ => func(new_context, key, value)
+            };
+        }
+    }
+
+    pub fn len_raw(&self, context: &mut Context) -> usize {
+        context.get_state().raw_len(self.get_pos())
+    }
+
+    pub fn len(&self, context: &mut Context) -> i64 {
+        context.get_state().len_direct(self.get_pos())
+    }
+
+    pub fn append(&self, context: &mut Context, value: &ToLua) {
+        let length = self.len(context);
+        self.set(context, &(length+1), value);
     }
 }
 
 impl LuaStackable for LuaTable {
     fn get_pos(&self) -> Index {
         self.index
+    }
+}
+
+impl ToLua for LuaTable {
+    fn to_lua(&self, state: &mut State) {
+        state.push_value(self.get_pos());
     }
 }
 

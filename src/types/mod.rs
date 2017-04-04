@@ -1,4 +1,4 @@
-use lua::{State, Index, ToLua};
+use lua::{Index};
 
 pub mod number;
 pub mod string;
@@ -22,10 +22,4 @@ pub use self::userdata::LuaUserdata;
 
 pub trait LuaStackable {
     fn get_pos(&self) -> Index;
-}
-
-impl ToLua for LuaStackable {
-    fn to_lua(&self, state: &mut State) {
-        state.push_value(self.get_pos());
-    }
 }

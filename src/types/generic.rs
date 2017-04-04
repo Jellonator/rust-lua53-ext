@@ -1,4 +1,4 @@
-use lua::{Index, Type, FromLua, State};
+use lua::{Index, Type, ToLua, FromLua, State};
 use types::{LuaStackable};
 use context::Context;
 
@@ -25,6 +25,12 @@ impl LuaGeneric {
 impl LuaStackable for LuaGeneric {
     fn get_pos(&self) -> Index {
         self.index
+    }
+}
+
+impl ToLua for LuaGeneric {
+    fn to_lua(&self, state: &mut State) {
+        state.push_value(self.get_pos());
     }
 }
 
