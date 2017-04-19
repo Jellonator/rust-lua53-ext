@@ -24,9 +24,21 @@ impl LuaTable {
         context.get_state().set_table(self.get_pos());
     }
 
+    pub fn set_raw(&self, context: &mut Context, key: &ToLua, value: &ToLua) {
+        key.to_lua(context.get_state());
+        value.to_lua(context.get_state());
+        context.get_state().raw_set(self.get_pos());
+    }
+
     pub fn get(&self, context: &mut Context, key: &ToLua) -> LuaGeneric {
         key.to_lua(context.get_state());
         context.get_state().get_table(self.get_pos());
+        LuaGeneric::new(context.get_state().get_top())
+    }
+
+    pub fn get_raw(&self, context: &mut Context, key: &ToLua) -> LuaGeneric {
+        key.to_lua(context.get_state());
+        context.get_state().raw_get(self.get_pos());
         LuaGeneric::new(context.get_state().get_top())
     }
 

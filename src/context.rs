@@ -8,6 +8,18 @@ pub struct Context<'a> {
     target_pos: Index,
 }
 
+pub fn userdata_drop<T>(state: &mut State) -> i32 {
+    use std::ptr;
+    let mut context = Context::new(state);
+    unsafe {
+        // should be safe as long as types match
+        let userdata = context.get_arg::<types::LuaUserdata>(1).unwrap();
+        let entity = userdata.get_value::<T>(&mut context).unwrap();
+        ptr::drop_in_place(entity as *mut T);
+    };
+    0
+}
+
 impl<'a> Context<'a> {
     pub fn new(state: &mut State) -> Context {
         let pos = state.get_top();
@@ -68,6 +80,13 @@ impl<'a> Context<'a> {
         unsafe { ptr::write(self.state.new_userdata_typed(), value); }
         let i = self.state.get_top();
         types::LuaUserdata::new(i)
+    }
+
+    pub fn push_userdata_named<T>(&mut self, value: T, name: &str) -> types::LuaUserdata {
+        let entity_object = self.push_userdata(value);
+        let entity_object_meta = self.metatable_get(&name).unwrap();
+        entity_object.set_metatable(self, &entity_object_meta);
+        entity_object
     }
 
     pub fn create_lib(&mut self, lib: &[(&str, Function)]) -> types::LuaTable {
@@ -181,6 +200,22 @@ impl<'a> Context<'a> {
                 None
             }
         }
+    }
+
+    pub fn metatable_register_named<T>(&mut self, lib: &[(&str, Function)], metamethods: &[(&str, Function)], unique_name: &str)
+            -> Option<types::LuaTable> {
+        let entity_library_members = self.create_lib(lib);
+        let (should_set, entity_metatable) = self.metatable_register(unique_name);
+        if should_set {
+            for &(ref name, ref value) in metamethods.iter() {
+                entity_metatable.set_raw(self, name, value);
+            }
+            entity_metatable.set_raw(self, &"__index", &entity_library_members);
+            entity_metatable.set_raw(self, &"__gc", &lua_func!(userdata_drop<T>));
+            // disable getting of metatables
+            entity_metatable.set_raw(self, &"__metatable", &0);
+        }
+        Some(entity_metatable)
     }
 }
 

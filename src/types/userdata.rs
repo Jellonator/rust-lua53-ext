@@ -21,6 +21,11 @@ impl LuaUserdata {
     pub unsafe fn get_value<'a, T>(&self, context: &'a mut Context) -> Option<&'a mut T> {
         context.get_state().to_userdata_typed(self.index)
     }
+
+    pub unsafe fn get_value_named<'a, T>(&self, context: &'a mut Context, name: &str)
+            -> Option<&'a mut T> {
+        context.get_state().test_userdata_typed(self.index, name)
+    }
 }
 
 impl LuaStackable for LuaUserdata {

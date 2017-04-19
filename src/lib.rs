@@ -1,3 +1,4 @@
+#[macro_use]
 extern crate lua;
 pub mod context;
 pub mod types;
