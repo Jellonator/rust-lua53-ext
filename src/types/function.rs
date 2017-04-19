@@ -35,9 +35,9 @@ impl LuaFunction {
             Err(status) => {
                 error::new_luaresult_err(status, error::pop_error_from_state(context.get_state()))
             },
-            Ok(status) => {
+            Ok(_) => {
                 let top_post = context.get_state().get_top();
-                error::new_luaresult_ok(status, (top_prev..top_post)
+                error::new_luaresult_ok((top_prev..top_post)
                     .map(|i| LuaGeneric::new(i+1))
                     .collect())
             }
@@ -52,22 +52,18 @@ impl LuaFunction {
     pub fn pcall_singleret(&self, context: &mut Context, args: &[&ToLua],
             errfunc: Option<&LuaFunction>) -> error::Result<Option<LuaGeneric>> {
         self.pcall(context, args, errfunc, 1)
-            .map(|success| {
-                success.map(|mut v| {
-                    match v.len() {
-                        0 => None,
-                        _ => Some(v.swap_remove(0))
-                    }
-                })
+            .map(|mut v| {
+                match v.len() {
+                    0 => None,
+                    _ => Some(v.swap_remove(0))
+                }
             })
     }
 
     pub fn pcall_noret(&self, context: &mut Context, args: &[&ToLua],
             errfunc: Option<&LuaFunction>) -> error::Result<()> {
         self.pcall(context, args, errfunc, 0)
-            .map(|success| {
-                success.map(|_|())
-            })
+            .map(|_|())
     }
 
     // Standard function calling; error results in longjmp

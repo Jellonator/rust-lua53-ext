@@ -2,18 +2,21 @@ use lua::{Index, ToLua, FromLua, State};
 use types::{LuaStackable};
 use context::Context;
 
+/// Represents a boolean value on the Lua stack
 pub struct LuaBool {
     index: Index
 }
 
 impl LuaBool {
+    /// Create a new LuaBool given an index
     pub fn new(i: Index) -> LuaBool {
         LuaBool {
             index: i
         }
     }
 
-    pub fn get_value(&self, context: &mut Context) -> bool {
+    /// Get the value of this boolean
+    pub fn get(&self, context: &mut Context) -> bool {
         context.get_state().to_bool(self.index)
     }
 }

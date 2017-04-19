@@ -2,17 +2,20 @@ use lua::{Index, ToLua, FromLua, State};
 use types::{LuaStackable};
 use context::Context;
 
+/// Represents a String on the Lua Stack
 pub struct LuaString {
     index: Index
 }
 
 impl LuaString {
+    /// Create a new String given an index
     pub fn new(i: Index) -> LuaString {
         LuaString {
             index: i
         }
     }
 
+    /// Get the value of this string
     pub fn get<'a>(&self, context: &'a mut Context) -> &'a str {
         context.get_state().to_str(self.get_pos()).unwrap()
     }

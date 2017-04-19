@@ -20,6 +20,8 @@ pub use self::boolean::LuaBool;
 pub use self::function::LuaFunction;
 pub use self::userdata::LuaUserdata;
 
+/// Any value that can represent an Index on a Lua Stack
 pub trait LuaStackable {
+    /// Get the position of this value on the stack
     fn get_pos(&self) -> Index;
 }
