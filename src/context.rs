@@ -118,15 +118,6 @@ impl<'a> Context<'a> {
         types::LuaGeneric::new(i)
     }
 
-    /// Get the value from the global Lua namespace.
-    pub fn get_global<T: FromLua>(&mut self, key: &str) -> Option<T> {
-        self.state.get_global(key);
-        let top = self.state.get_top();
-        let ret = self.state.to_type(top);
-        self.state.pop(1);
-        ret
-    }
-
     /// Set a value in the global Lua namespace.
     pub fn set_global(&mut self, key: &str, value: &ToLua) {
         value.to_lua(self.state);

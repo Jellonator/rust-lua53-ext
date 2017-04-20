@@ -8,7 +8,7 @@ fn test_global() {
     let mut state = State::new();
     let mut context = Context::new(&mut state);
     context.set_global("foo", &12);
-    assert_eq!(Some(12), context.get_global("foo"));
+    assert_eq!(Some(12), context.push_global("foo").get_value(&mut context));
 }
 
 #[test]
@@ -108,5 +108,5 @@ fn test_stack_as_variable() {
     let b = context.push_integer(15);
     context.set_global("foo", &b);
 
-    assert_eq!(context.get_global("foo"), Some(15));
+    assert_eq!(context.push_global("foo").get_value(&mut context), Some(15));
 }

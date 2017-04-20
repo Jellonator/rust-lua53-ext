@@ -74,6 +74,11 @@ impl LuaTable {
     /// May call the `__len` metamethod
     ///
     /// Equivalent to the Lua `#` operator
+    ///
+    /// # Panics
+    ///
+    /// This method will panic if this table has a `__len`
+    /// metamethod that does not return an integer
     pub fn len(&self, context: &mut Context) -> i64 {
         context.get_state().len_direct(self.get_pos())
     }
@@ -106,8 +111,8 @@ impl LuaTable {
     ///
     /// Equivalent to the Lua `table.insert` function
     pub fn append(&self, context: &mut Context, value: &ToLua) {
-        let length = self.len(context);
-        self.set(context, &(length+1), value);
+        let length = self.len_raw(context);
+        self.set(context, &(length as i64+1), value);
     }
 }
 
