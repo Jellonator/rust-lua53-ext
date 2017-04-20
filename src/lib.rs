@@ -1,5 +1,7 @@
+#![crate_name = "luaext"]
+
 #[macro_use]
-extern crate lua;
+pub extern crate lua;
 pub mod context;
 pub mod types;
 pub mod error;

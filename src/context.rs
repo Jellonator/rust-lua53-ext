@@ -12,12 +12,13 @@ pub struct Context<'a> {
     target_pos: Index,
 }
 
-fn userdata_drop<T>(state: &mut State) -> i32 {
+/// __gc metamethod used to clean up Rust types that implements the Drop trait.
+pub fn userdata_drop<T>(state: &mut State) -> i32 {
     use std::ptr;
     let mut context = Context::new(state);
     unsafe {
         // should be safe as long as types match
-        let userdata = context.get_arg::<types::LuaUserdata>(1).unwrap();
+        let userdata = context.get_arg_typed::<types::LuaUserdata>(1).unwrap();
         let entity = userdata.get_value::<T>(&mut context).unwrap();
         ptr::drop_in_place(entity as *mut T);
     };
@@ -39,63 +40,63 @@ impl<'a> Context<'a> {
         self.state
     }
 
-    /// Push a floating point number onto the stack
+    /// Push a floating point number onto the stack.
     pub fn push_number(&mut self, value: f64) -> types::LuaNumber {
         self.state.push_number(value);
         let i = self.state.get_top();
         types::LuaNumber::new(i)
     }
 
-    /// Push a string onto the stack
+    /// Push a string onto the stack.
     pub fn push_string(&mut self, value: &str) -> types::LuaString {
         self.state.push_string(value);
         let i = self.state.get_top();
         types::LuaString::new(i)
     }
 
-    /// Create a new table and push it into the stack
+    /// Create a new table and push it into the stack.
     pub fn push_table(&mut self) -> types::LuaTable {
         self.state.new_table();
         let i = self.state.get_top();
         types::LuaTable::new(i)
     }
 
-    /// Push a boolean value onto the stack
+    /// Push a boolean value onto the stack.
     pub fn push_bool(&mut self, value: bool) -> types::LuaBool {
         self.state.push_bool(value);
         let i = self.state.get_top();
         types::LuaBool::new(i)
     }
 
-    /// Push a C function onto the stack
+    /// Push a C function onto the stack.
     pub fn push_function(&mut self, func: Function) -> types::LuaFunction {
         self.state.push_fn(func);
         let i = self.state.get_top();
         types::LuaFunction::new(i)
     }
 
-    /// Push an integer onto the stack
+    /// Push an integer onto the stack.
     pub fn push_integer(&mut self, value: i64) -> types::LuaInteger {
         self.state.push_integer(value);
         let i = self.state.get_top();
         types::LuaInteger::new(i)
     }
 
-    /// Push a nil value onto the stack
+    /// Push a nil value onto the stack.
     pub fn push_nil(&mut self) -> types::LuaNil {
         self.state.push_nil();
         let i = self.state.get_top();
         types::LuaNil::new(i)
     }
 
-    /// Push a user-defined value onto the stack
+    /// Push a user-defined value onto the stack.
     pub fn push_userdata<T>(&mut self, value: T) -> types::LuaUserdata {
         unsafe { ptr::write(self.state.new_userdata_typed(), value); }
         let i = self.state.get_top();
         types::LuaUserdata::new(i)
     }
 
-    /// Push a user-defined value onto the stack, and give it a metatable using 'name'
+    /// Push a user-defined value onto the stack, and give it the metatable named 'name.'
     pub fn push_userdata_named<T>(&mut self, value: T, name: &str) -> types::LuaUserdata {
         let entity_object = self.push_userdata(value);
         let entity_object_meta = self.metatable_get(&name).unwrap();
@@ -103,21 +104,21 @@ impl<'a> Context<'a> {
         entity_object
     }
 
-    /// Create a library using an array of Functions, and push the library table onto the stack
+    /// Create a library using an array of Functions, and push the library table onto the stack.,
     pub fn create_lib(&mut self, lib: &[(&str, Function)]) -> types::LuaTable {
         self.state.new_lib(lib);
         let i = self.state.get_top();
         types::LuaTable::new(i)
     }
 
-    /// Push a global value onto the stack
+    /// Push a global value onto the stack.
     pub fn push_global(&mut self, key: &str) -> types::LuaGeneric {
         self.state.get_global(key);
         let i = self.state.get_top();
         types::LuaGeneric::new(i)
     }
 
-    /// Get the value from the global Lua namespace
+    /// Get the value from the global Lua namespace.
     pub fn get_global<T: FromLua>(&mut self, key: &str) -> Option<T> {
         self.state.get_global(key);
         let top = self.state.get_top();
@@ -126,13 +127,13 @@ impl<'a> Context<'a> {
         ret
     }
 
-    /// Set a value in the global Lua namespace
+    /// Set a value in the global Lua namespace.
     pub fn set_global(&mut self, key: &str, value: &ToLua) {
         value.to_lua(self.state);
         self.state.set_global(key);
     }
 
-    /// Get a value from the Lua registry
+    /// Get a value from the Lua registry.
     pub fn get_from_registry(&mut self, key: &ToLua) -> types::LuaGeneric {
         key.to_lua(self.state);
         self.state.get_table(REGISTRYINDEX);
@@ -140,7 +141,7 @@ impl<'a> Context<'a> {
         types::LuaGeneric::new(i)
     }
 
-    /// Get a value from the Lua registry using a type
+    /// Get a value from the Lua registry using a type.
     pub fn get_from_registry_typed<T: FromLua>(&mut self, key: &ToLua) -> Option<T> {
         key.to_lua(self.state);
         self.state.get_table(REGISTRYINDEX);
@@ -148,22 +149,31 @@ impl<'a> Context<'a> {
         T::from_lua(&mut self.state, i)
     }
 
-    /// Set a value in the Lua registry
+    /// Set a value in the Lua registry.
     pub fn set_in_registry(&mut self, key: &ToLua, value: &ToLua) {
         key.to_lua(self.state);
         value.to_lua(self.state);
         self.state.set_table(REGISTRYINDEX);
     }
 
-    /// Get an argument from this context
-    pub fn get_arg<T: FromLua>(&mut self, arg: Index) -> Option<T> {
+    /// Get an argument from this context.
+    pub fn get_arg(&mut self, arg: Index) -> Option<types::LuaGeneric> {
+        if self.state.is_none(arg) {
+            None
+        } else {
+            Some(types::LuaGeneric::new(arg))
+        }
+    }
+
+    /// Get an argument from this context.
+    pub fn get_arg_typed<T: FromLua>(&mut self, arg: Index) -> Option<T> {
         T::from_lua(&mut self.state, arg)
     }
 
-    /// Get an argument from this context
+    /// Get an argument from this context.
     ///
     /// If the argument does not exist, return a default value.
-    pub fn get_arg_or<T: FromLua>(&mut self, arg: Index, value: T) -> Option<T> {
+    pub fn get_arg_typed_or<T: FromLua>(&mut self, arg: Index, value: T) -> Option<T> {
         if self.state.is_none_or_nil(arg) {
             Some(value)
         } else {
@@ -171,10 +181,11 @@ impl<'a> Context<'a> {
         }
     }
 
-    /// Execute valid Lua code
+    /// Execute valid Lua code.
     ///
     /// # Errors
-    /// Returns an error if the string is not valid Lua, or a runtime error occurs during execution
+    /// Returns an error if the string is not valid Lua,
+    /// or a runtime error occurs during execution.
     pub fn do_string(&mut self, s: &str) -> error::Result<()> {
         let threadstatus = self.state.do_string(&s);
         match error::get_status_from_threadstatus(threadstatus) {
@@ -187,7 +198,7 @@ impl<'a> Context<'a> {
         }
     }
 
-    /// Push a new context on top of the current context
+    /// Push a new context on top of the current context.
     ///
     /// New values can not be pushed onto the old context until the new context goes out of scope;
     /// however, values pushed by the old context can still be used by the new context.
@@ -195,7 +206,7 @@ impl<'a> Context<'a> {
         Context::new(&mut self.state)
     }
 
-    /// Returns a list of values to Lua
+    /// Returns a list of values to Lua.
     pub fn return_context(mut self, args: &[&ToLua]) -> Index {
         // push elements in reverse order
         for arg in args.iter().rev() {
@@ -208,7 +219,7 @@ impl<'a> Context<'a> {
         args.len() as Index
     }
 
-    /// Register a new metatable in the registry
+    /// Register a new metatable in the registry.
     ///
     /// Returns a tuple; the first value is if this metatable should be initialized, and the
     /// second value is the metatable itself.
@@ -219,7 +230,7 @@ impl<'a> Context<'a> {
         (ret, table)
     }
 
-    /// Get a metatable from the registry
+    /// Get a metatable from the registry.
     pub fn metatable_get(&mut self, name: &str) -> Option<types::LuaTable> {
         self.state.get_metatable_from_registry(name);
         match self.state.is_table(-1) {

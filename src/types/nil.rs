@@ -1,11 +1,13 @@
 use lua::{Index, ToLua, FromLua, State};
 use types::{LuaStackable};
 
+/// Represents a nil value on the Lua stack
 pub struct LuaNil {
     index: Index
 }
 
 impl LuaNil {
+    /// Create a new LuaNil given an index
     pub fn new(i: Index) -> LuaNil {
         LuaNil {
             index: i
