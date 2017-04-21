@@ -23,23 +23,19 @@ fn test_thread() {
 
         function mean()
             local ret = 0
-            print(\"Start mean\")
             for i, v in ipairs(t) do
                 ret = ret + v
             end
             ret = ret / #t
-            print(\"End mean\")
             return ret
         end
         function median()
-            print(\"Start median\")
             local ls = {}
             for i, v in ipairs(t) do
                 ls[i] = v
             end
             table.sort(ls)
             local ret = ls[#ls // 2]
-            print(\"End median\")
             return ret
         end
     ").unwrap();
