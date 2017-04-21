@@ -104,6 +104,10 @@ impl<'a> Context<'a> {
         entity_object
     }
 
+    pub fn push_thread(&mut self) -> State {
+        self.state.new_thread()
+    }
+
     /// Create a library using an array of Functions, and push the library table onto the stack.,
     pub fn create_lib(&mut self, lib: &[(&str, Function)]) -> types::LuaTable {
         self.state.new_lib(lib);

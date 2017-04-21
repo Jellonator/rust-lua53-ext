@@ -10,6 +10,7 @@ pub mod boolean;
 pub mod function;
 pub mod userdata;
 pub mod ltuserdata;
+pub mod thread;
 
 pub use self::number::LuaNumber;
 pub use self::string::LuaString;
@@ -21,6 +22,7 @@ pub use self::boolean::LuaBool;
 pub use self::function::LuaFunction;
 pub use self::userdata::LuaUserdata;
 pub use self::ltuserdata::LuaLightUserdata;
+pub use self::thread::LuaThread;
 
 /// Any value that can represent an Index on a Lua Stack
 pub trait LuaStackable {
