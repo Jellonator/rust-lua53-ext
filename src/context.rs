@@ -104,8 +104,14 @@ impl<'a> Context<'a> {
         entity_object
     }
 
-    pub fn push_thread(&mut self) -> State {
-        self.state.new_thread()
+    /// Push a Lua thread onto the stack
+    ///
+    /// You will need to do stuff with the Lua thread in a separate thread if you want two Lua
+    /// threads to run concurrently, Lua doesn't do any actual multithreading itself.
+    pub fn push_thread(&mut self) -> types::LuaThread {
+        self.state.new_thread();
+        let i = self.state.get_top();
+        types::LuaThread::new(i)
     }
 
     /// Create a library using an array of Functions, and push the library table onto the stack.,
