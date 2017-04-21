@@ -9,6 +9,7 @@ readme = "README.md"
 
 repository = "https://github.com/jellonator/rust-lua53-ext.git"
 homepage = "https://github.com/jellonator/rust-lua53-ext"
+documentation = "https://docs.rs/lua53-ext/"
 
 keywords = [
 	"lua", 
