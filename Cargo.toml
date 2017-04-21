@@ -1,6 +1,6 @@
 [package]
 name = "lua53-ext"
-version = "0.1.0"
+version = "0.1.1"
 description = "Extension to jcmoyer's Lua 5.3 bindings"
 
 authors = ["James Beedie <jellonator00@gmail.com>"]
@@ -12,9 +12,9 @@ homepage = "https://github.com/jellonator/rust-lua53-ext"
 documentation = "https://docs.rs/lua53-ext/"
 
 keywords = [
-	"lua", 
-	"bindings", 
-	"lua53", 
+	"lua",
+	"bindings",
+	"lua53",
 	"extension"
 ]
 

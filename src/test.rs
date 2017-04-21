@@ -4,6 +4,75 @@ use lua::{State, Type};
 use types::LuaFunction;
 
 #[test]
+fn test_thread() {
+    use std::thread;
+    let mut state = State::new();
+    state.open_libs();
+    let mut context = Context::new(&mut state);
+
+    // Create a table with a bunch of random numbers
+    // Create a median function that finds the median value of the table
+    // and a mean function that finds the mean of all the values
+    context.do_string("
+        t = {}
+        math.randomseed(os.time())
+        for i = 1, 10000 do
+            local v = math.random()
+            table.insert(t, v)
+        end
+
+        function mean()
+            local ret = 0
+            print(\"Start mean\")
+            for i, v in ipairs(t) do
+                ret = ret + v
+            end
+            ret = ret / #t
+            print(\"End mean\")
+            return ret
+        end
+        function median()
+            print(\"Start median\")
+            local ls = {}
+            for i, v in ipairs(t) do
+                ls[i] = v
+            end
+            table.sort(ls)
+            local ret = ls[#ls // 2]
+            print(\"End median\")
+            return ret
+        end
+    ").unwrap();
+
+
+    let luathread1 = context.push_thread();
+    let luathread2 = context.push_thread();
+    {
+        let mut state1 = luathread1.as_state(&mut context);
+        let mut state2 = luathread2.as_state(&mut context);
+        let thread1 = thread::spawn(move || {
+            let mut context1 = Context::new(&mut state1);
+            let func = context1.push_global("mean")
+                .get_value::<LuaFunction>(&mut context1).unwrap();
+            let result = func.call_singleret(&mut context1, &[]).unwrap()
+                .get_value::<f64>(&mut context1);
+            return result.unwrap();
+        });
+        let thread2 = thread::spawn(move || {
+            let mut context2 = Context::new(&mut state2);
+            let func = context2.push_global("median")
+                .get_value::<LuaFunction>(&mut context2).unwrap();
+            let result = func.call_singleret(&mut context2, &[]).unwrap()
+                .get_value::<f64>(&mut context2);
+            return result.unwrap();
+        });
+
+        println!("Mean: {:?}", thread1.join().unwrap());
+        println!("Median: {:?}", thread2.join().unwrap());
+    }
+}
+
+#[test]
 fn test_global() {
     let mut state = State::new();
     let mut context = Context::new(&mut state);
@@ -41,8 +110,8 @@ fn test_function_call() {
 
     let value:Option<f64> = context.push_global("foo")
         .get_value::<LuaFunction>(&mut context)
-        .map(|func| func.call(&mut context, &[&1.2, &1.2], 1).swap_remove(0))
-        .and_then(|val|val.get_value(&mut context));
+        .map(|func| func.call_singleret(&mut context, &[&1.2, &1.2]).unwrap())
+        .and_then(|val|val.get_value::<f64>(&mut context));
     // let value = &func.call(&mut context, &[&1.2, &1.2], 1)[0];
     assert_eq!(value, Some(2.4));
 }
