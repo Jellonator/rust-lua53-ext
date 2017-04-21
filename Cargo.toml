@@ -1,7 +1,25 @@
 [package]
-name = "luaext"
+name = "lua53-ext"
 version = "0.1.0"
-authors = ["Jellonator <jellonator00@gmail.com>"]
+description = "Extension to jcmoyer's Lua 5.3 bindings"
+
+authors = ["James Beedie <jellonator00@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+
+repository = "https://github.com/jellonator/rust-lua53-ext.git"
+homepage = "https://github.com/jellonator/rust-lua53-ext"
+
+keywords = [
+	"lua", 
+	"bindings", 
+	"lua53", 
+	"extension"
+]
+
+[lib]
+name = "luaext"
+path = "src/lib.rs"
 
 [dependencies]
 lua = "0.0.10"
